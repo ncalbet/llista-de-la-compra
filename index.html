@@ -108,13 +108,29 @@ let S={screen:"pin",pin:"",pinErr:"",usuari:null,prod:[],emrg:[],hist:[],freq:{}
 
 // FIREBASE
 const db=getDatabase(initializeApp(FB_CFG));
-let syncPaused=false;
-function fbSync(key,data){if(!syncPaused)set(ref(db,key),data).catch(e=>console.warn("FB err:",e));}
+const lastWrite={};
+function fbSync(key,data){
+  lastWrite[key]=Date.now();
+  set(ref(db,key),data).catch(e=>console.warn("FB:",e));
+}
 function connectar(){
-  onValue(ref(db,"productes"),s=>{if(!syncPaused){S.prod=s.val()?Object.values(s.val()):[];draw();}});
-  onValue(ref(db,"emergencia"),s=>{if(!syncPaused){S.emrg=s.val()?Object.values(s.val()):[];draw();}});
-  onValue(ref(db,"historial"),s=>{if(!syncPaused){S.hist=s.val()?Object.values(s.val()):[];draw();}});
-  onValue(ref(db,"frequents"),s=>{S.freq=s.val()||{};S.loading=false;if(!syncPaused)draw();});
+  onValue(ref(db,"productes"),s=>{
+    if(Date.now()-(lastWrite.productes||0)<3000)return;
+    S.prod=s.val()?Object.values(s.val()):[];draw();
+  });
+  onValue(ref(db,"emergencia"),s=>{
+    if(Date.now()-(lastWrite.emergencia||0)<3000)return;
+    S.emrg=s.val()?Object.values(s.val()):[];draw();
+  });
+  onValue(ref(db,"historial"),s=>{
+    if(Date.now()-(lastWrite.historial||0)<3000)return;
+    S.hist=s.val()?Object.values(s.val()):[];draw();
+  });
+  onValue(ref(db,"frequents"),s=>{
+    S.freq=s.val()||{};S.loading=false;
+    if(Date.now()-(lastWrite.frequents||0)<3000)return;
+    draw();
+  });
 }
 function getLlista(){return S.tab==="emergencia"?S.emrg:S.prod;}
 function setLlista(l){if(S.tab==="emergencia")S.emrg=l;else S.prod=l;}
