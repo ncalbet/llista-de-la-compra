@@ -19,14 +19,14 @@
     .dot.on{background:#667eea;border-color:#667eea;}
     .pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;}
     .pbtn{padding:16px;border-radius:12px;border:2px solid #e0e0e0;background:white;font-size:20px;font-weight:600;color:#1a1a2e;}
-    .pbtn:active{background:#f0f0f0;}
+    .pbtn:active,.pbtn:hover{background:#f0f0f0;}
     .pbtn.inv{visibility:hidden;}
     .perr{color:#e74c3c;font-size:13px;min-height:18px;margin-top:6px;}
     .ubtn{width:100%;padding:15px;border-radius:14px;border:none;font-size:17px;font-weight:600;color:white;margin-bottom:10px;}
     .hdr{padding:18px 16px 22px;color:white;}
     .hrow{display:flex;justify-content:space-between;align-items:center;max-width:480px;margin:0 auto;}
     .cbtn{background:rgba(255,255,255,.2);border:none;color:white;border-radius:10px;padding:7px 13px;font-size:13px;font-weight:600;}
-    .main{max-width:480px;margin:0 auto;padding:14px;}
+    .main{max-width:480px;margin:0 auto;padding:14px 14px;}
     .tabs{display:flex;gap:7px;margin-bottom:14px;}
     .tab{flex:1;padding:9px 2px;border-radius:11px;border:2px solid #e0e0e0;background:white;color:#999;font-size:11px;font-weight:700;}
     .tab.on{background:var(--bg);color:var(--cl);border-color:var(--cl);}
@@ -71,13 +71,14 @@
     .hd{font-size:12px;font-weight:700;color:#27ae60;text-transform:uppercase;margin-bottom:7px;display:flex;align-items:center;gap:5px;}
     .hl{flex:1;height:1px;background:#27ae6030;margin-left:4px;}
     .hi{background:white;border-radius:11px;padding:9px 13px;display:flex;align-items:center;gap:9px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:5px;}
+    .errbx{background:#fee;border:1px solid #fcc;border-radius:9px;padding:9px 13px;margin-bottom:10px;font-size:12px;color:#c00;display:flex;justify-content:space-between;}
   </style>
 </head>
 <body>
 <div id="R"></div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const PIN="98", NOMS=["Néstor","Cata"];
 const COL=["#667eea","#f5576c"];
@@ -93,7 +94,7 @@ const CATS=[
   {id:"higiene",nom:"Higiene",e:"🧴",c:"#3498db"},{id:"picapica",nom:"Pica-pica",e:"🧆",c:"#e91e8c"},
   {id:"congelats",nom:"Congelats",e:"🧊",c:"#00bcd4"},{id:"altres",nom:"Altres",e:"🛍️",c:"#95a5a6"},
 ];
-const CM={poma:0,pomes:0,platan:0,platans:0,taronja:0,taronges:0,llimona:0,llimones:0,maduixa:0,maduixes:0,pera:0,peres:0,melo:0,sindria:0,mango:0,kiwi:0,fruita:0,tomaquet:1,tomaquets:1,patata:1,patates:1,ceba:1,cebes:1,all:1,alls:1,pastanaga:1,enciam:1,espinacs:1,pebrot:1,pebrots:1,broquil:1,coliflor:1,porro:1,carbassa:1,cogombre:1,verdura:1,verdures:1,pollastre:2,llom:2,bistec:2,costelles:2,vedella:2,porc:2,xai:2,hamburguesa:2,carn:2,peix:3,salmo:3,tonyina:3,bacalla:3,lluc:3,gambes:3,musclos:3,calamars:3,sardines:3,pernil:4,fuet:4,llonganissa:4,salami:4,xorizo:4,embotit:4,llet:5,iogurt:5,iogurts:5,formatge:5,mantequilla:5,nata:5,quefir:5,ous:5,pa:6,baguette:6,galetes:6,cereals:6,farina:6,arros:6,pasta:6,macarrons:6,espaguetis:6,torrades:6,aigua:7,cervesa:7,vi:7,cava:7,suc:7,refresc:7,cafe:7,te:7,infusio:7,beguda:7,conserva:8,olives:8,cigrons:8,llenties:8,mais:8,pesols:8,detergent:9,suavitzant:9,lleixiu:9,fregall:9,esponja:9,neteja:9,bosses:9,gel:10,xampu:10,condicionador:10,desodorant:10,higiene:10,"patates fregides":11,cacauets:11,pipes:11,xips:11,hummus:11,congelat:12,congelats:12,gelat:12,gelats:12,pizza:12,croquetes:12};
+const CM={poma:0,pomes:0,platan:0,platans:0,taronja:0,taronges:0,llimona:0,llimones:0,maduixa:0,maduixes:0,pera:0,peres:0,melo:0,sindria:0,mango:0,kiwi:0,fruita:0,tomaquet:1,tomaquets:1,patata:1,patates:1,ceba:1,cebes:1,all:1,alls:1,pastanaga:1,enciam:1,espinacs:1,pebrot:1,pebrots:1,broquil:1,coliflor:1,porro:1,carbassa:1,cogombre:1,verdura:1,verdures:1,pollastre:2,llom:2,bistec:2,costelles:2,vedella:2,porc:2,xai:2,hamburguesa:2,carn:2,peix:3,salmo:3,tonyina:3,bacalla:3,lluc:3,gambes:3,musclos:3,calamars:3,sardines:3,pernil:4,fuet:4,llonganissa:4,salami:4,xorizo:4,embotit:4,llet:5,iogurt:5,iogurts:5,formatge:5,mantequilla:5,nata:5,quefir:5,ous:5,pa:6,baguette:6,galetes:6,cereals:6,farina:6,arros:6,pasta:6,macarrons:6,espaguetis:6,torrades:6,aigua:7,cervesa:7,vi:7,cava:7,suc:7,refresc:7,cafe:7,te:7,infusio:7,beguda:7,conserva:8,conserves:8,olives:8,cigrons:8,llenties:8,mais:8,pesols:8,detergent:9,suavitzant:9,lleixiu:9,fregall:9,esponja:9,neteja:9,bosses:9,gel:10,xampu:10,condicionador:10,desodorant:10,higiene:10,"patates fregides":11,cacauets:11,pipes:11,xips:11,hummus:11,congelat:12,congelats:12,gelat:12,gelats:12,pizza:12,croquetes:12};
 const GEN=[{n:"Pa",c:"pa"},{n:"Llet",c:"lactis"},{n:"Ous",c:"lactis"},{n:"Iogurt",c:"lactis"},{n:"Formatge",c:"lactis"},{n:"Mantequilla",c:"lactis"},{n:"Pollastre",c:"carn"},{n:"Carn picada",c:"carn"},{n:"Llom",c:"carn"},{n:"Peix",c:"peix"},{n:"Tomàquets",c:"verdura"},{n:"Patates",c:"verdura"},{n:"Ceba",c:"verdura"},{n:"Enciam",c:"verdura"},{n:"Pebrot",c:"verdura"},{n:"Pastanaga",c:"verdura"},{n:"Pomes",c:"fruita"},{n:"Plàtans",c:"fruita"},{n:"Taronges",c:"fruita"},{n:"Maduixes",c:"fruita"},{n:"Arròs",c:"pa"},{n:"Pasta",c:"pa"},{n:"Tomàquet triturat",c:"conserves"},{n:"Detergent",c:"neteja"},{n:"Paper de vàter",c:"neteja"},{n:"Gel de dutxa",c:"higiene"},{n:"Xampú",c:"higiene"},{n:"Cervesa",c:"begudes"},{n:"Aigua",c:"begudes"},{n:"Pernil dolç",c:"embotit"},{n:"Fuet",c:"embotit"},{n:"Patates fregides",c:"picapica"},{n:"Olives",c:"picapica"},{n:"Pizza",c:"congelats"},{n:"Croquetes",c:"congelats"}];
 
 const gc=id=>CATS.find(c=>c.id===id)||CATS[CATS.length-1];
@@ -101,81 +102,82 @@ const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
 const uid=()=>Math.random().toString(36).substr(2,9)+Date.now().toString(36);
 const nrm=s=>s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 const dcat=s=>{const n=nrm(s);for(const[k,v]of Object.entries(CM))if(n===nrm(k)||n.includes(nrm(k)))return CATS[v].id;return"altres";};
-const toObj=l=>{const o={};l.forEach(p=>o[p.id]=p);return Object.keys(o).length?o:null;};
-const fromSnap=s=>s.val()?Object.values(s.val()):[];
+// Categoria recordada: llista actual > freqüents > historial > genèrics > detecció
+const catMem=nom=>{
+  const k=nrm(nom);
+  const ll=[...S.prod,...S.emrg].filter(p=>nrm(p.nom)===k&&p.cat).sort((a,b)=>(b.ts||0)-(a.ts||0))[0];
+  if(ll)return ll.cat;
+  if(S.freq[k]?.cat)return S.freq[k].cat;
+  const h=S.hist.filter(x=>nrm(x.nom)===k&&x.cat).sort((a,b)=>(b.ts||0)-(a.ts||0))[0];
+  if(h)return h.cat;
+  const g=GEN.find(a=>nrm(a.n)===k);
+  if(g)return g.c;
+  return dcat(nom);
+};
 
 // ESTAT
-let S={screen:"pin",pin:"",pinErr:"",usuari:null,prod:[],emrg:[],hist:[],freq:{},text:"",catS:null,showCP:false,showF:false,openId:null,loading:true,tab:"normal",sugs:[]};
-let lastLocalWrite=0;
+let S={screen:"pin",pin:"",pinErr:"",usuari:null,prod:[],emrg:[],hist:[],freq:{},text:"",catS:null,catManual:false,showCP:false,showF:false,openId:null,loading:true,tab:"normal",sugs:[],err:null};
 
 // FIREBASE
 const db=getDatabase(initializeApp(FB_CFG));
-const fbSet=(k,v)=>set(ref(db,k),v).catch(e=>console.error("FB write error:",k,e));
-
-// Càrrega inicial - llegeix de Firebase una sola vegada
-async function loadFromFirebase(){
-  try{
-    const[p,e,h,f]=await Promise.all([get(ref(db,"productes")),get(ref(db,"emergencia")),get(ref(db,"historial")),get(ref(db,"frequents"))]);
-    S.prod=fromSnap(p);S.emrg=fromSnap(e);S.hist=fromSnap(h);S.freq=f.val()||{};
-    S.loading=false;draw();
-  }catch(err){
-    console.error("Load error:",err);
-    S.loading=false;draw();
-  }
+let syncPaused=false;
+function fbSync(key,data){
+  if(syncPaused)return;
+  set(ref(db,key),data).catch(e=>{
+    console.warn("FB err:",e);
+    S.err="Error en guardar a Firebase: "+(e.message||e.code||"Error desconegut");
+    draw();
+  });
 }
-
-// Polling cada 5s per detectar canvis de l'altra persona
-function startPolling(){
-  setInterval(async()=>{
-    if(Date.now()-lastLocalWrite<4000)return; // no interferir amb escriptures recents
-    try{
-      const[p,e,h]=await Promise.all([get(ref(db,"productes")),get(ref(db,"emergencia")),get(ref(db,"historial"))]);
-      const np=fromSnap(p),ne=fromSnap(e),nh=fromSnap(h);
-      let changed=false;
-      if(JSON.stringify(np)!==JSON.stringify(S.prod)){S.prod=np;changed=true;}
-      if(JSON.stringify(ne)!==JSON.stringify(S.emrg)){S.emrg=ne;changed=true;}
-      if(JSON.stringify(nh)!==JSON.stringify(S.hist)){S.hist=nh;changed=true;}
-      if(changed)draw();
-    }catch(e){}
-  },5000);
+let _unsubs=[];
+function connectar(){
+  _unsubs.forEach(u=>u());
+  _unsubs=[];
+  _unsubs.push(onValue(ref(db,"productes"),s=>{S.prod=s.val()?Object.values(s.val()):[];S.loading=false;draw();}));
+  _unsubs.push(onValue(ref(db,"emergencia"),s=>{S.emrg=s.val()?Object.values(s.val()):[];draw();}));
+  _unsubs.push(onValue(ref(db,"historial"),s=>{S.hist=s.val()?Object.values(s.val()):[];draw();}));
+  _unsubs.push(onValue(ref(db,"frequents"),s=>{S.freq=s.val()||{};draw();}));
 }
-
-// Guardar a Firebase i marcar temps d'escriptura
-function fbSave(key,data){lastLocalWrite=Date.now();fbSet(key,data);}
 function getLlista(){return S.tab==="emergencia"?S.emrg:S.prod;}
 function setLlista(l){if(S.tab==="emergencia")S.emrg=l;else S.prod=l;}
-function saveLlista(l){setLlista(l);fbSave(S.tab==="emergencia"?"emergencia":"productes",toObj(l));}
+function fbSaveLlista(l){const o={};l.forEach(p=>o[p.id]=p);fbSync(S.tab==="emergencia"?"emergencia":"productes",Object.keys(o).length?o:null);}
 
-// ACCIONS
+// ACCIONS - actualitzen estat local immediatament, Firebase en segon pla
 function afegir(nom,catF){
   const n=(nom||S.text).trim();if(!n)return;
   const l=getLlista();
   if(l.some(p=>!p.comprat&&nrm(p.nom)===nrm(n)))return;
-  const cat=catF||S.catS||dcat(n);
-  saveLlista([...l,{id:uid(),nom:n,comprat:false,usuari:NOMS[S.usuari],cat,ts:Date.now()}]);
-  S.text="";S.catS=null;S.showCP=false;S.sugs=[];
-  const inp=document.getElementById("inp");if(inp)inp.value="";
+  const cat=catF||(S.catManual&&S.catS)||catMem(n);
+  const nouProd=[...l,{id:uid(),nom:n,comprat:false,usuari:NOMS[S.usuari],cat,ts:Date.now()}];
+  setLlista(nouProd);
+  S.text="";S.catS=null;S.catManual=false;S.showCP=false;S.sugs=[];
   draw();
+  fbSaveLlista(nouProd);
 }
 function toggle(id){
   const l=getLlista(),p=l.find(x=>x.id===id);if(!p)return;
   if(!p.comprat){
     const k=nrm(p.nom);
     S.freq={...S.freq,[k]:{count:((S.freq[k]?.count)||0)+1,cat:p.cat}};
-    fbSave("frequents",S.freq);
+    fbSync("frequents",S.freq);
   }
-  saveLlista(l.map(x=>x.id===id?{...x,comprat:!x.comprat}:x));
-  draw();
+  const nl=l.map(x=>x.id===id?{...x,comprat:!x.comprat}:x);
+  setLlista(nl);draw();fbSaveLlista(nl);
 }
-function canviarCat(id,cat){saveLlista(getLlista().map(p=>p.id===id?{...p,cat}:p));S.openId=null;draw();}
-function eliminar(id){saveLlista(getLlista().filter(p=>p.id!==id));draw();}
+function canviarCat(id,cat){
+  const nl=getLlista().map(p=>p.id===id?{...p,cat}:p);
+  setLlista(nl);S.openId=null;draw();fbSaveLlista(nl);
+}
+function eliminar(id){
+  const nl=getLlista().filter(p=>p.id!==id);
+  setLlista(nl);draw();fbSaveLlista(nl);
+}
 function netejar(){
   const l=getLlista(),comp=l.filter(p=>p.comprat);if(!comp.length)return;
   const ara=Date.now();
   S.hist=[...S.hist,...comp.map(p=>({id:uid(),nom:p.nom,cat:p.cat,usuari:p.usuari,ts:ara}))];
-  fbSave("historial",toObj(S.hist));
-  saveLlista(l.filter(p=>!p.comprat));
-  draw();
+  const ho={};S.hist.forEach(h=>ho[h.id]=h);fbSync("historial",ho);
+  const nl=l.filter(p=>!p.comprat);setLlista(nl);draw();fbSaveLlista(nl);
 }
 function exportar(){
   const rows=["\uFEFFData;Hora;Producte;Categoria;Usuari"];
@@ -189,7 +191,8 @@ function calcSugs(q){
   if(q.length<2)return[];
   const al=new Set(getLlista().filter(p=>!p.comprat).map(p=>nrm(p.nom)));
   const fq=Object.entries(S.freq).sort((a,b)=>(b[1].count||0)-(a[1].count||0)).map(([k])=>k);
-  return[...new Set([...fq,...GEN.map(a=>nrm(a.n))])].filter(a=>a.includes(q)&&!al.has(a)).slice(0,4);
+  const gn=GEN.map(a=>nrm(a.n));
+  return[...new Set([...fq,...gn])].filter(a=>a.includes(q)&&!al.has(a)).slice(0,4);
 }
 function freqLlista(){
   const al=new Set(getLlista().filter(p=>!p.comprat).map(p=>nrm(p.nom)));
@@ -202,7 +205,9 @@ function agrupar(l){const g={};l.forEach(p=>{if(!g[p.cat])g[p.cat]=[];g[p.cat].p
 
 // RENDER
 function draw(){
-  document.getElementById("R").innerHTML=S.screen==="pin"?hPin():S.screen==="user"?hUser():hApp();
+  document.getElementById("R").innerHTML=
+    S.screen==="pin"?hPin():
+    S.screen==="user"?hUser():hApp();
   if(S.screen==="app"&&S.tab!=="historial"){
     const inp=document.getElementById("inp");
     if(inp){inp.value=S.text;inp.style.setProperty("--cl",COL[S.usuari]);}
@@ -232,22 +237,23 @@ function hApp(){
   const isE=S.tab==="emergencia",isH=S.tab==="historial";
   const ll=getLlista(),pend=ll.filter(p=>!p.comprat),comp=ll.filter(p=>p.comprat);
   const tabDef=[{id:"normal",l:"🛒 Normal",cl},{id:"emergencia",l:"🍽️ Emergència",cl:"#e67e22"},{id:"historial",l:"📋 Historial",cl:"#27ae60"}];
+
   const hdr=`<div class="hdr" style="background:${grd}"><div class="hrow">
     <div><b style="font-size:20px;color:white">🛒 Llista de la Compra</b>
     <p style="font-size:12px;color:rgba(255,255,255,.85);margin-top:3px">Connectat com: <b>${NOMS[S.usuari]}</b></p></div>
     <button class="cbtn" data-action="change">Canviar</button>
   </div></div>`;
+
   const tabs=`<div class="tabs">${tabDef.map(t=>`<button class="tab${S.tab===t.id?" on":""}" data-tab="${t.id}" style="--cl:${t.cl};--bg:${t.cl}18">${t.l}</button>`).join("")}</div>`;
 
   if(isH){
     let h="";
-    if(!S.hist.length){h=`<div class="empty"><div style="font-size:44px;margin-bottom:10px">📋</div><p>Encara no hi ha historial.</p></div>`;}
+    if(!S.hist.length){h=`<div class="empty"><div style="font-size:44px;margin-bottom:10px">📋</div><p>Encara no hi ha historial.<br>Apareixerà quan netegeu la llista.</p></div>`;}
     else{
       h+=`<button class="ebtn" data-action="export">⬇️ Exportar a Excel</button>`;
       const g={},opts={weekday:"long",day:"numeric",month:"long"};
-      [...S.hist].sort((a,b)=>b.ts-a.ts).forEach(x=>{const d=new Date(x.ts).toLocaleDateString("ca-ES",opts);if(!g[d])g[d]=[];g[d].push(x);});
-      h+=Object.entries(g).map(([dia,its])=>`<div style="margin-bottom:16px">
-        <div class="hd">📅 ${dia}<div class="hl"></div></div>
+      [...S.hist].sort((a,b)=>b.ts-a.ts).forEach(h2=>{const d=new Date(h2.ts).toLocaleDateString("ca-ES",opts);if(!g[d])g[d]=[];g[d].push(h2);});
+      h+=Object.entries(g).map(([dia,its])=>`<div style="margin-bottom:16px"><div class="hd">📅 ${dia}<div class="hl"></div></div>
         ${its.map(x=>{const c=gc(x.cat),bc=x.usuari==="Néstor"?"#667eea":"#f5576c",hr=new Date(x.ts).toLocaleTimeString("ca-ES",{hour:"2-digit",minute:"2-digit"});
         return`<div class="hi"><span>${c.e}</span><span style="flex:1;font-size:14px">${x.nom}</span><span class="bdg" style="background:${bc}20;color:${bc}">${x.usuari}</span><span style="font-size:11px;color:#bbb">${hr}</span></div>`;}).join("")}
       </div>`).join("");
@@ -255,25 +261,35 @@ function hApp(){
     return hdr+`<div class="main">${tabs}${h}</div>`;
   }
 
-  const catA=S.catS?gc(S.catS):null;
+  // Input
   let body=`<div class="irow">
     <input id="inp" class="inp" type="text" placeholder="Afegeix un producte..." autocomplete="off"/>
     <button class="abtn" style="background:${grd}" data-action="afegir">+</button>
   </div>`;
-  if(S.sugs.length) body+=`<div class="sugs">${S.sugs.map(s=>`<div class="sug" data-action="sug" data-nom="${s}">${gc(dcat(s)).e} ${cap(s)}</div>`).join("")}</div>`;
+
+  // Suggeriments
+  if(S.sugs.length) body+=`<div class="sugs">${S.sugs.map(s=>`<div class="sug" data-action="sug" data-nom="${s}">${gc(catMem(s)).e} ${cap(s)}</div>`).join("")}</div>`;
+
+  // Cat detect
+  const catA=S.catS?gc(S.catS):null;
   if(catA&&S.text.trim().length>=2){
     body+=`<div class="catrow">Categoria: <button class="ctag" data-action="catpick" style="border-color:${catA.c};color:${catA.c};background:${catA.c}15">${catA.e} ${catA.nom} ✎</button>
     ${S.showCP?`<div class="cpanel">${CATS.map(c=>`<button class="cpbtn" data-action="setcat" data-cat="${c.id}" style="border-color:${c.c};background:${S.catS===c.id?c.c:"white"};color:${S.catS===c.id?"white":c.c}">${c.e} ${c.nom}</button>`).join("")}</div>`:""}</div>`;
   }
+
+  // Freqüents
   const fc=S.showF?cl:"#e0e0e0";
   body+=`<button class="fbtn" data-action="freq" style="border-color:${fc};background:${S.showF?cl+"10":"white"};color:${S.showF?cl:"#999"};border-radius:${S.showF?"13px 13px 0 0":"13px"};margin-bottom:${S.showF?"0":"16px"}">⭐ Articles freqüents ${S.showF?"▲":"▼"}</button>`;
   if(S.showF){
-    body+=`<div class="fpanel">${freqLlista().map(a=>{
+    const fl=freqLlista();
+    body+=`<div class="fpanel">${fl.map(a=>{
       const ja=getLlista().some(p=>!p.comprat&&nrm(p.nom)===nrm(a.nom));
       const c=gc(a.cat);
       return`<button class="ftag" data-action="fadd" data-nom="${a.nom}" data-cat="${a.cat}" style="border-color:${ja?"#eee":c.c};background:${ja?"#f9f9f9":c.c+"15"};color:${ja?"#ccc":c.c};cursor:${ja?"default":"pointer"}">${c.e} ${ja?"✓ ":"+ "}${cap(a.nom)}</button>`;
     }).join("")}</div>`;
   }
+
+  // Llista
   if(S.loading) body+=`<div class="ld">Carregant...</div>`;
   else if(!pend.length) body+=`<div class="empty"><div style="font-size:44px;margin-bottom:10px">${isE?"🍽️":"🎉"}</div><p>${isE?"Llista d'emergència buida!":"La llista és buida!"}<br>Afegeix el primer producte.</p></div>`;
   else body+=`<div class="mb14"><div class="slbl">Per comprar (${pend.length})</div>
@@ -281,10 +297,13 @@ function hApp(){
       <div class="cgh"><span style="font-size:15px">${cat.e}</span><span class="cgn" style="color:${cat.c}">${cat.nom}</span><div class="cgl" style="background:${cat.c}30"></div></div>
       <div class="ilist">${items.map(p=>hItem(p)).join("")}</div>
     </div>`).join("")}</div>`;
+
   if(comp.length) body+=`<div><div class="ch"><div class="slbl" style="margin:0">Comprats (${comp.length})</div>
     <button class="clrbtn" data-action="netejar">Netejar</button></div>
     <div class="ilist">${comp.map(p=>hItem(p)).join("")}</div></div>`;
-  return hdr+`<div class="main">${tabs}${body}</div>`;
+
+  const errBx=S.err?`<div class="errbx"><span>${S.err}</span><button data-action="clrerr">✕</button></div>`:"";
+  return hdr+`<div class="main">${tabs}${errBx}${body}</div>`;
 }
 function hItem(p){
   const cat=gc(p.cat),bc=p.usuari==="Néstor"?"#667eea":"#f5576c",ob=S.openId===p.id;
@@ -300,22 +319,33 @@ function hItem(p){
   </div>`;
 }
 
-// EVENTS
+// EVENT LISTENERS
 document.addEventListener("click",e=>{
-  const pb=e.target.closest("[data-pin]");
+  const t=e.target;
+
+  // PIN buttons
+  const pb=t.closest("[data-pin]");
   if(pb){
-    const k=pb.dataset.pin;if(k==="_")return;
+    const k=pb.dataset.pin;
+    if(k==="_")return;
     if(k==="⌫"){S.pin=S.pin.slice(0,-1);S.pinErr="";}
-    else if(S.pin.length<2){S.pin+=k;
-      if(S.pin.length===2){if(S.pin===PIN){S.screen="user";S.pin="";S.pinErr="";}else{S.pinErr="PIN incorrecte.";S.pin="";}}
+    else if(S.pin.length<2){
+      S.pin+=k;
+      if(S.pin.length===2){
+        if(S.pin===PIN){S.screen="user";S.pin="";S.pinErr="";}
+        else{S.pinErr="PIN incorrecte. Torna-ho a provar.";S.pin="";}
+      }
     }
     draw();return;
   }
-  const ub=e.target.closest("[data-user]");
-  if(ub){S.usuari=+ub.dataset.user;S.screen="app";S.loading=true;draw();loadFromFirebase();startPolling();return;}
-  const tb=e.target.closest("[data-tab]");
+  // User select
+  const ub=t.closest("[data-user]");
+  if(ub){S.usuari=+ub.dataset.user;S.screen="app";S.loading=true;draw();connectar();return;}
+  // Tab
+  const tb=t.closest("[data-tab]");
   if(tb){S.tab=tb.dataset.tab;S.text="";S.sugs=[];S.openId=null;draw();return;}
-  const ab=e.target.closest("[data-action]");
+  // Actions
+  const ab=t.closest("[data-action]");
   if(!ab)return;
   const a=ab.dataset.action;
   if(a==="change"){S.screen="user";S.usuari=null;draw();}
@@ -323,7 +353,7 @@ document.addEventListener("click",e=>{
   else if(a==="sug")afegir(cap(ab.dataset.nom));
   else if(a==="fadd"){const ja=getLlista().some(p=>!p.comprat&&nrm(p.nom)===nrm(ab.dataset.nom));if(!ja)afegir(cap(ab.dataset.nom),ab.dataset.cat);}
   else if(a==="catpick"){S.showCP=!S.showCP;draw();}
-  else if(a==="setcat"){S.catS=ab.dataset.cat;S.showCP=false;draw();}
+  else if(a==="setcat"){S.catS=ab.dataset.cat;S.catManual=true;S.showCP=false;draw();}
   else if(a==="freq"){S.showF=!S.showF;draw();}
   else if(a==="toggle")toggle(ab.dataset.id);
   else if(a==="opencat"){S.openId=S.openId===ab.dataset.id?null:ab.dataset.id;draw();}
@@ -331,17 +361,20 @@ document.addEventListener("click",e=>{
   else if(a==="del")eliminar(ab.dataset.id);
   else if(a==="netejar")netejar();
   else if(a==="export")exportar();
+  else if(a==="clrerr"){S.err=null;draw();}
 });
+
 document.addEventListener("input",e=>{
   if(e.target.id!=="inp")return;
   S.text=e.target.value;
   const q=nrm(S.text);
-  S.catS=q.length>=2?dcat(q):null;
+  S.catS=q.length>=2?catMem(S.text.trim()):null;S.catManual=false;
   S.sugs=calcSugs(q);
+  // Actualitzar sugs sense re-draw (mantenir focus)
   const old=document.querySelector(".sugs");if(old)old.remove();
   if(S.sugs.length){
     const div=document.createElement("div");div.className="sugs";
-    div.innerHTML=S.sugs.map(s=>`<div class="sug" data-action="sug" data-nom="${s}">${gc(dcat(s)).e} ${cap(s)}</div>`).join("");
+    div.innerHTML=S.sugs.map(s=>`<div class="sug" data-action="sug" data-nom="${s}">${gc(catMem(s)).e} ${cap(s)}</div>`).join("");
     e.target.closest(".irow")?.after(div);
   }
 });
@@ -349,15 +382,17 @@ document.addEventListener("keydown",e=>{if(e.target.id==="inp"&&e.key==="Enter")
 
 draw();
 
+// Icona home screen
 (function(){
   const c=document.createElement("canvas");c.width=c.height=180;
   const x=c.getContext("2d");
   x.fillStyle="#667eea";x.beginPath();x.roundRect(0,0,180,180,36);x.fill();
   x.fillStyle="white";x.beginPath();x.roundRect(34,24,82,110,8);x.fill();
   x.strokeStyle="#667eea";x.lineWidth=6;x.lineCap="round";
-  [[50,60,100,60],[50,80,100,80],[50,100,80,100]].forEach(([a,b,cc,d])=>{x.beginPath();x.moveTo(a,b);x.lineTo(cc,d);x.stroke();});
+  [[50,60,100,60],[50,80,100,80],[50,100,80,100]].forEach(([a,b,c2,d])=>{x.beginPath();x.moveTo(a,b);x.lineTo(c2,d);x.stroke();});
   x.save();x.translate(115,115);x.rotate(-Math.PI/4);
-  x.fillStyle="#f5576c";x.fillRect(-8,-35,16,50);x.fillStyle="#c0392b";x.fillRect(-8,-35,16,8);
+  x.fillStyle="#f5576c";x.fillRect(-8,-35,16,50);
+  x.fillStyle="#c0392b";x.fillRect(-8,-35,16,8);
   x.fillStyle="#f5d76e";x.beginPath();x.moveTo(-8,15);x.lineTo(8,15);x.lineTo(0,30);x.closePath();x.fill();
   x.restore();
   const l=document.createElement("link");l.rel="apple-touch-icon";l.href=c.toDataURL("image/png");
