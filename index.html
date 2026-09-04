@@ -22,6 +22,8 @@
     .pbtn:active,.pbtn:hover{background:#f0f0f0;}
     .pbtn.inv{visibility:hidden;}
     .perr{color:#e74c3c;font-size:13px;min-height:18px;margin-top:6px;}
+    .inp.lg{text-align:left;margin-bottom:10px;}
+    .lnk{background:none;border:none;color:#aaa;font-size:12px;text-decoration:underline;margin-top:4px;}
     .ubtn{width:100%;padding:15px;border-radius:14px;border:none;font-size:17px;font-weight:600;color:white;margin-bottom:10px;}
     .hdr{padding:18px 16px 22px;color:white;}
     .hrow{display:flex;justify-content:space-between;align-items:center;max-width:480px;margin:0 auto;}
@@ -79,8 +81,9 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-const PIN="98", NOMS=["Néstor","Cata"];
+const NOMS=["Néstor","Cata"];
 const COL=["#667eea","#f5576c"];
 const GRD=["linear-gradient(135deg,#667eea,#764ba2)","linear-gradient(135deg,#f093fb,#f5576c)"];
 const FB_CFG={apiKey:"AIzaSyAAJKCccSwIFMeSZRHHt8LgF0SMZdiMOpw",authDomain:"llista-de-la-compra-a0a49.firebaseapp.com",databaseURL:"https://llista-de-la-compra-a0a49-default-rtdb.europe-west1.firebasedatabase.app",projectId:"llista-de-la-compra-a0a49",storageBucket:"llista-de-la-compra-a0a49.firebasestorage.app",messagingSenderId:"34629019552",appId:"1:34629019552:web:8dbd8649923e68699926c5"};
@@ -116,10 +119,12 @@ const catMem=nom=>{
 };
 
 // ESTAT
-let S={screen:"pin",pin:"",pinErr:"",usuari:null,prod:[],emrg:[],hist:[],freq:{},text:"",catS:null,catManual:false,showCP:false,showF:false,openId:null,loading:true,tab:"normal",sugs:[],err:null};
+let S={screen:"boot",email:"",authErr:"",authBusy:false,usuari:null,prod:[],emrg:[],hist:[],freq:{},text:"",catS:null,catManual:false,showCP:false,showF:false,openId:null,loading:true,tab:"normal",sugs:[],err:null};
 
 // FIREBASE
-const db=getDatabase(initializeApp(FB_CFG));
+const fbApp=initializeApp(FB_CFG);
+const db=getDatabase(fbApp);
+const auth=getAuth(fbApp);
 let syncPaused=false;
 function fbSync(key,data){
   if(syncPaused)return;
@@ -130,13 +135,42 @@ function fbSync(key,data){
   });
 }
 let _unsubs=[];
+function onErr(e){
+  console.warn("FB read err:",e);
+  S.err="Error de lectura de Firebase: "+(e.message||e.code||e);
+  S.loading=false;draw();
+}
 function connectar(){
   _unsubs.forEach(u=>u());
   _unsubs=[];
-  _unsubs.push(onValue(ref(db,"productes"),s=>{S.prod=s.val()?Object.values(s.val()):[];S.loading=false;draw();}));
-  _unsubs.push(onValue(ref(db,"emergencia"),s=>{S.emrg=s.val()?Object.values(s.val()):[];draw();}));
-  _unsubs.push(onValue(ref(db,"historial"),s=>{S.hist=s.val()?Object.values(s.val()):[];draw();}));
-  _unsubs.push(onValue(ref(db,"frequents"),s=>{S.freq=s.val()||{};draw();}));
+  _unsubs.push(onValue(ref(db,"productes"),s=>{S.prod=s.val()?Object.values(s.val()):[];S.loading=false;draw();},onErr));
+  _unsubs.push(onValue(ref(db,"emergencia"),s=>{S.emrg=s.val()?Object.values(s.val()):[];draw();},onErr));
+  _unsubs.push(onValue(ref(db,"historial"),s=>{S.hist=s.val()?Object.values(s.val()):[];draw();},onErr));
+  _unsubs.push(onValue(ref(db,"frequents"),s=>{S.freq=s.val()||{};draw();},onErr));
+}
+// AUTENTICACIÓ
+function msgAuth(e){
+  const c=(e&&e.code)||"";
+  if(/invalid-credential|invalid-login|wrong-password|user-not-found|invalid-email/.test(c))return"Correu o contrasenya incorrectes.";
+  if(c.includes("too-many-requests"))return"Massa intents. Espera una estona i torna-ho a provar.";
+  if(c.includes("network"))return"Sense connexió. Torna-ho a provar.";
+  if(c.includes("user-disabled"))return"Aquest compte està desactivat.";
+  if(/configuration-not-found|operation-not-allowed/.test(c))return"L'accés per correu encara no està activat al projecte Firebase.";
+  return(e&&e.message)||"No s'ha pogut iniciar la sessió.";
+}
+function entrar(){
+  if(S.authBusy)return;
+  const em=(document.getElementById("email")?.value||"").trim();
+  const pw=document.getElementById("pw")?.value||"";
+  S.email=em;
+  if(!em||!pw){S.authErr="Escriu el correu i la contrasenya.";draw();return;}
+  S.authBusy=true;S.authErr="";draw();
+  signInWithEmailAndPassword(auth,em,pw).catch(e=>{S.authBusy=false;S.authErr=msgAuth(e);draw();});
+}
+function sortir(){
+  _unsubs.forEach(u=>u());_unsubs=[];
+  S.usuari=null;S.prod=[];S.emrg=[];S.hist=[];S.freq={};S.err=null;
+  signOut(auth).catch(e=>{S.err="No s'ha pogut tancar la sessió: "+(e.message||e.code);draw();});
 }
 function getLlista(){return S.tab==="emergencia"?S.emrg:S.prod;}
 function setLlista(l){if(S.tab==="emergencia")S.emrg=l;else S.prod=l;}
@@ -206,7 +240,8 @@ function agrupar(l){const g={};l.forEach(p=>{if(!g[p.cat])g[p.cat]=[];g[p.cat].p
 // RENDER
 function draw(){
   document.getElementById("R").innerHTML=
-    S.screen==="pin"?hPin():
+    S.screen==="boot"?`<div class="center"><div class="ld">Carregant…</div></div>`:
+    S.screen==="login"?hLogin():
     S.screen==="user"?hUser():hApp();
   if(S.screen==="app"&&S.tab!=="historial"){
     const inp=document.getElementById("inp");
@@ -214,14 +249,15 @@ function draw(){
   }
 }
 
-function hPin(){
+function hLogin(){
   return`<div class="center"><div class="card">
     <div style="font-size:50px;margin-bottom:10px">🔒</div>
     <h1 style="font-size:22px;font-weight:700;color:#1a1a2e;margin-bottom:6px">Llista de la Compra</h1>
-    <p style="color:#777;font-size:14px">Introdueix el PIN</p>
-    <div class="pin-dots">${[0,1].map(i=>`<div class="dot${i<S.pin.length?" on":""}"></div>`).join("")}</div>
-    <div class="pgrid">${[1,2,3,4,5,6,7,8,9,"_",0,"⌫"].map(k=>`<button class="pbtn${k==="_"?" inv":""}" data-pin="${k}">${k==="_"?"":k}</button>`).join("")}</div>
-    <p class="perr">${S.pinErr}</p>
+    <p style="color:#777;font-size:14px;margin-bottom:18px">Inicia la sessió</p>
+    <input id="email" class="inp lg" type="email" inputmode="email" autocomplete="username" placeholder="Correu" value="${S.email}"/>
+    <input id="pw" class="inp lg" type="password" autocomplete="current-password" placeholder="Contrasenya"/>
+    <button class="ubtn" style="background:${GRD[0]}" data-action="login"${S.authBusy?" disabled":""}>${S.authBusy?"Entrant…":"Entrar"}</button>
+    <p class="perr">${S.authErr}</p>
   </div></div>`;
 }
 function hUser(){
@@ -230,6 +266,7 @@ function hUser(){
     <h1 style="font-size:22px;font-weight:700;color:#1a1a2e;margin-bottom:6px">Llista de la Compra</h1>
     <p style="color:#777;font-size:14px;margin-bottom:28px">Qui ets tu?</p>
     ${NOMS.map((n,i)=>`<button class="ubtn" style="background:${GRD[i]}" data-user="${i}">${n}</button>`).join("")}
+    <button class="lnk" data-action="logout">Tancar sessió</button>
   </div></div>`;
 }
 function hApp(){
@@ -323,21 +360,6 @@ function hItem(p){
 document.addEventListener("click",e=>{
   const t=e.target;
 
-  // PIN buttons
-  const pb=t.closest("[data-pin]");
-  if(pb){
-    const k=pb.dataset.pin;
-    if(k==="_")return;
-    if(k==="⌫"){S.pin=S.pin.slice(0,-1);S.pinErr="";}
-    else if(S.pin.length<2){
-      S.pin+=k;
-      if(S.pin.length===2){
-        if(S.pin===PIN){S.screen="user";S.pin="";S.pinErr="";}
-        else{S.pinErr="PIN incorrecte. Torna-ho a provar.";S.pin="";}
-      }
-    }
-    draw();return;
-  }
   // User select
   const ub=t.closest("[data-user]");
   if(ub){S.usuari=+ub.dataset.user;S.screen="app";S.loading=true;draw();connectar();return;}
@@ -348,7 +370,9 @@ document.addEventListener("click",e=>{
   const ab=t.closest("[data-action]");
   if(!ab)return;
   const a=ab.dataset.action;
-  if(a==="change"){S.screen="user";S.usuari=null;draw();}
+  if(a==="login")entrar();
+  else if(a==="logout")sortir();
+  else if(a==="change"){S.screen="user";S.usuari=null;draw();}
   else if(a==="afegir")afegir();
   else if(a==="sug")afegir(cap(ab.dataset.nom));
   else if(a==="fadd"){const ja=getLlista().some(p=>!p.comprat&&nrm(p.nom)===nrm(ab.dataset.nom));if(!ja)afegir(cap(ab.dataset.nom),ab.dataset.cat);}
@@ -378,7 +402,19 @@ document.addEventListener("input",e=>{
     e.target.closest(".irow")?.after(div);
   }
 });
-document.addEventListener("keydown",e=>{if(e.target.id==="inp"&&e.key==="Enter")afegir();});
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Enter")return;
+  if(e.target.id==="inp")afegir();
+  else if(e.target.id==="email"||e.target.id==="pw")entrar();
+});
+
+// Sessió recordada al dispositiu: Firebase Auth la restaura sola en carregar
+onAuthStateChanged(auth,u=>{
+  S.authBusy=false;
+  if(u){if(S.screen==="boot"||S.screen==="login"){S.screen="user";S.authErr="";S.email="";}}
+  else{_unsubs.forEach(x=>x());_unsubs=[];S.screen="login";S.usuari=null;}
+  draw();
+});
 
 draw();
 
