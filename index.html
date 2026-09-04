@@ -23,7 +23,6 @@
     .pbtn.inv{visibility:hidden;}
     .perr{color:#e74c3c;font-size:13px;min-height:18px;margin-top:6px;}
     .inp.lg{text-align:left;margin-bottom:10px;}
-    .lnk{background:none;border:none;color:#aaa;font-size:12px;text-decoration:underline;margin-top:4px;}
     .ubtn{width:100%;padding:15px;border-radius:14px;border:none;font-size:17px;font-weight:600;color:white;margin-bottom:10px;}
     .hdr{padding:18px 16px 22px;color:white;}
     .hrow{display:flex;justify-content:space-between;align-items:center;max-width:480px;margin:0 auto;}
@@ -84,6 +83,8 @@ import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebase
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const NOMS=["Néstor","Cata"];
+// Cada compte de Firebase és una persona: UID -> índex dins de NOMS
+const UIDS={"nTUck7SxrFPrPlBDcC7WoRDyemm2":0,"k5Z1g27X4WaipV3j1cmoLFFLNRB3":1};
 const COL=["#667eea","#f5576c"];
 const GRD=["linear-gradient(135deg,#667eea,#764ba2)","linear-gradient(135deg,#f093fb,#f5576c)"];
 const FB_CFG={apiKey:"AIzaSyAAJKCccSwIFMeSZRHHt8LgF0SMZdiMOpw",authDomain:"llista-de-la-compra-a0a49.firebaseapp.com",databaseURL:"https://llista-de-la-compra-a0a49-default-rtdb.europe-west1.firebasedatabase.app",projectId:"llista-de-la-compra-a0a49",storageBucket:"llista-de-la-compra-a0a49.firebasestorage.app",messagingSenderId:"34629019552",appId:"1:34629019552:web:8dbd8649923e68699926c5"};
@@ -241,8 +242,7 @@ function agrupar(l){const g={};l.forEach(p=>{if(!g[p.cat])g[p.cat]=[];g[p.cat].p
 function draw(){
   document.getElementById("R").innerHTML=
     S.screen==="boot"?`<div class="center"><div class="ld">Carregant…</div></div>`:
-    S.screen==="login"?hLogin():
-    S.screen==="user"?hUser():hApp();
+    S.screen==="login"?hLogin():hApp();
   if(S.screen==="app"&&S.tab!=="historial"){
     const inp=document.getElementById("inp");
     if(inp){inp.value=S.text;inp.style.setProperty("--cl",COL[S.usuari]);}
@@ -260,15 +260,6 @@ function hLogin(){
     <p class="perr">${S.authErr}</p>
   </div></div>`;
 }
-function hUser(){
-  return`<div class="center"><div class="card">
-    <div style="font-size:50px;margin-bottom:10px">🛒</div>
-    <h1 style="font-size:22px;font-weight:700;color:#1a1a2e;margin-bottom:6px">Llista de la Compra</h1>
-    <p style="color:#777;font-size:14px;margin-bottom:28px">Qui ets tu?</p>
-    ${NOMS.map((n,i)=>`<button class="ubtn" style="background:${GRD[i]}" data-user="${i}">${n}</button>`).join("")}
-    <button class="lnk" data-action="logout">Tancar sessió</button>
-  </div></div>`;
-}
 function hApp(){
   const cl=COL[S.usuari],grd=GRD[S.usuari];
   const isE=S.tab==="emergencia",isH=S.tab==="historial";
@@ -278,7 +269,7 @@ function hApp(){
   const hdr=`<div class="hdr" style="background:${grd}"><div class="hrow">
     <div><b style="font-size:20px;color:white">🛒 Llista de la Compra</b>
     <p style="font-size:12px;color:rgba(255,255,255,.85);margin-top:3px">Connectat com: <b>${NOMS[S.usuari]}</b></p></div>
-    <button class="cbtn" data-action="change">Canviar</button>
+    <button class="cbtn" data-action="logout">Sortir</button>
   </div></div>`;
 
   const tabs=`<div class="tabs">${tabDef.map(t=>`<button class="tab${S.tab===t.id?" on":""}" data-tab="${t.id}" style="--cl:${t.cl};--bg:${t.cl}18">${t.l}</button>`).join("")}</div>`;
@@ -360,9 +351,6 @@ function hItem(p){
 document.addEventListener("click",e=>{
   const t=e.target;
 
-  // User select
-  const ub=t.closest("[data-user]");
-  if(ub){S.usuari=+ub.dataset.user;S.screen="app";S.loading=true;draw();connectar();return;}
   // Tab
   const tb=t.closest("[data-tab]");
   if(tb){S.tab=tb.dataset.tab;S.text="";S.sugs=[];S.openId=null;draw();return;}
@@ -372,7 +360,6 @@ document.addEventListener("click",e=>{
   const a=ab.dataset.action;
   if(a==="login")entrar();
   else if(a==="logout")sortir();
-  else if(a==="change"){S.screen="user";S.usuari=null;draw();}
   else if(a==="afegir")afegir();
   else if(a==="sug")afegir(cap(ab.dataset.nom));
   else if(a==="fadd"){const ja=getLlista().some(p=>!p.comprat&&nrm(p.nom)===nrm(ab.dataset.nom));if(!ja)afegir(cap(ab.dataset.nom),ab.dataset.cat);}
@@ -411,7 +398,17 @@ document.addEventListener("keydown",e=>{
 // Sessió recordada al dispositiu: Firebase Auth la restaura sola en carregar
 onAuthStateChanged(auth,u=>{
   S.authBusy=false;
-  if(u){if(S.screen==="boot"||S.screen==="login"){S.screen="user";S.authErr="";S.email="";}}
+  if(u){
+    const i=UIDS[u.uid];
+    if(i===undefined){ // compte sense accés a la llista
+      S.authErr="Aquest compte no té accés a la llista.";
+      S.screen="login";S.usuari=null;draw();signOut(auth);return;
+    }
+    if(S.screen!=="app"){
+      S.usuari=i;S.screen="app";S.authErr="";S.email="";S.loading=true;
+      draw();connectar();return;
+    }
+  }
   else{_unsubs.forEach(x=>x());_unsubs=[];S.screen="login";S.usuari=null;}
   draw();
 });
