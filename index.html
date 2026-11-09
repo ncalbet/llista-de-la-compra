@@ -105,6 +105,8 @@ const GEN=[{n:"Pa",c:"pa"},{n:"Llet",c:"lactis"},{n:"Ous",c:"lactis"},{n:"Iogurt
 const gc=id=>CATS.find(c=>c.id===id)||CATS[CATS.length-1];
 const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
 const uid=()=>Math.random().toString(36).substr(2,9)+Date.now().toString(36);
+// Tot text que ve de la base de dades o de l'usuari passa per esc() abans d'entrar a l'HTML
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
 const nrm=s=>s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 const dcat=s=>{const n=nrm(s);for(const[k,v]of Object.entries(CM))if(n===nrm(k)||n.includes(nrm(k)))return CATS[v].id;return"altres";};
 // Categoria recordada: llista actual > freqüents > historial > genèrics > detecció
@@ -202,7 +204,7 @@ function llegirLlista(txt){
       s=s.replace(/^[^\p{L}\p{N}[]+/u,"").replace(/^\[[ xX✓✔]?\]/,"").replace(/^\d+[.)](?=\s|\p{L})/u,"").trim();
     }while(s!==abans);
     if(!s||s.endsWith(":"))return; // línia buida o títol ("Mercadona:")
-    s=s.replace(/[<>"]/g,"").replace(/[^\p{L}\p{N})]+$/u,"").replace(/\s+/g," ").trim();
+    s=s.replace(/[^\p{L}\p{N})"'»”’]+$/u,"").replace(/\s+/g," ").trim();
     if(!/\p{L}/u.test(s))return; // només xifres o signes
     const k=nrm(s);
     if(vist.has(k))return;
@@ -299,10 +301,10 @@ function hLogin(){
     <div style="font-size:50px;margin-bottom:10px">🔒</div>
     <h1 style="font-size:22px;font-weight:700;color:#1a1a2e;margin-bottom:6px">Llista de la Compra</h1>
     <p style="color:#777;font-size:14px;margin-bottom:18px">Inicia la sessió</p>
-    <input id="email" class="inp lg" type="email" inputmode="email" autocomplete="username" placeholder="Correu" value="${S.email}"/>
+    <input id="email" class="inp lg" type="email" inputmode="email" autocomplete="username" placeholder="Correu" value="${esc(S.email)}"/>
     <input id="pw" class="inp lg" type="password" autocomplete="current-password" placeholder="Contrasenya"/>
     <button class="ubtn" style="background:${GRD[0]}" data-action="login"${S.authBusy?" disabled":""}>${S.authBusy?"Entrant…":"Entrar"}</button>
-    <p class="perr">${S.authErr}</p>
+    <p class="perr">${esc(S.authErr)}</p>
   </div></div>`;
 }
 function hApp(){
@@ -328,7 +330,7 @@ function hApp(){
       [...S.hist].sort((a,b)=>b.ts-a.ts).forEach(h2=>{const d=new Date(h2.ts).toLocaleDateString("ca-ES",opts);if(!g[d])g[d]=[];g[d].push(h2);});
       h+=Object.entries(g).map(([dia,its])=>`<div style="margin-bottom:16px"><div class="hd">📅 ${dia}<div class="hl"></div></div>
         ${its.map(x=>{const c=gc(x.cat),bc=x.usuari==="Néstor"?"#667eea":"#f5576c",hr=new Date(x.ts).toLocaleTimeString("ca-ES",{hour:"2-digit",minute:"2-digit"});
-        return`<div class="hi"><span>${c.e}</span><span style="flex:1;font-size:14px">${x.nom}</span><span class="bdg" style="background:${bc}20;color:${bc}">${x.usuari}</span><span style="font-size:11px;color:#bbb">${hr}</span></div>`;}).join("")}
+        return`<div class="hi"><span>${c.e}</span><span style="flex:1;font-size:14px">${esc(x.nom)}</span><span class="bdg" style="background:${bc}20;color:${bc}">${esc(x.usuari)}</span><span style="font-size:11px;color:#bbb">${hr}</span></div>`;}).join("")}
       </div>`).join("");
     }
     return hdr+`<div class="main">${tabs}${h}</div>`;
@@ -341,7 +343,7 @@ function hApp(){
   </div>`;
 
   // Suggeriments
-  if(S.sugs.length) body+=`<div class="sugs">${S.sugs.map(s=>`<div class="sug" data-action="sug" data-nom="${s}">${gc(catMem(s)).e} ${cap(s)}</div>`).join("")}</div>`;
+  if(S.sugs.length) body+=`<div class="sugs">${S.sugs.map(s=>`<div class="sug" data-action="sug" data-nom="${esc(s)}">${gc(catMem(s)).e} ${esc(cap(s))}</div>`).join("")}</div>`;
 
   // Cat detect
   const catA=S.catS?gc(S.catS):null;
@@ -358,7 +360,7 @@ function hApp(){
     body+=`<div class="fpanel">${fl.map(a=>{
       const ja=getLlista().some(p=>!p.comprat&&nrm(p.nom)===nrm(a.nom));
       const c=gc(a.cat);
-      return`<button class="ftag" data-action="fadd" data-nom="${a.nom}" data-cat="${a.cat}" style="border-color:${ja?"#eee":c.c};background:${ja?"#f9f9f9":c.c+"15"};color:${ja?"#ccc":c.c};cursor:${ja?"default":"pointer"}">${c.e} ${ja?"✓ ":"+ "}${cap(a.nom)}</button>`;
+      return`<button class="ftag" data-action="fadd" data-nom="${esc(a.nom)}" data-cat="${esc(a.cat)}" style="border-color:${ja?"#eee":c.c};background:${ja?"#f9f9f9":c.c+"15"};color:${ja?"#ccc":c.c};cursor:${ja?"default":"pointer"}">${c.e} ${ja?"✓ ":"+ "}${esc(cap(a.nom))}</button>`;
     }).join("")}</div>`;
   }
 
@@ -386,21 +388,21 @@ function hApp(){
     <button class="clrbtn" data-action="netejar">Netejar</button></div>
     <div class="ilist">${comp.map(p=>hItem(p)).join("")}</div></div>`;
 
-  const errBx=S.err?`<div class="errbx"><span>${S.err}</span><button data-action="clrerr">✕</button></div>`:"";
-  const okBx=S.ok?`<div class="okbx"><span>${S.ok}</span><button data-action="clrok">✕</button></div>`:"";
+  const errBx=S.err?`<div class="errbx"><span>${esc(S.err)}</span><button data-action="clrerr">✕</button></div>`:"";
+  const okBx=S.ok?`<div class="okbx"><span>${esc(S.ok)}</span><button data-action="clrok">✕</button></div>`:"";
   return hdr+`<div class="main">${tabs}${errBx}${okBx}${body}</div>`;
 }
 function hItem(p){
   const cat=gc(p.cat),bc=p.usuari==="Néstor"?"#667eea":"#f5576c",ob=S.openId===p.id;
   return`<div class="item${p.comprat?" dn":""}">
     <div class="ir">
-      <button class="chk${p.comprat?" dn":""}" data-action="toggle" data-id="${p.id}">${p.comprat?"✓":""}</button>
-      <button class="emo" data-action="opencat" data-id="${p.id}">${cat.e}</button>
-      <span class="inom${p.comprat?" dn":""}">${p.nom}</span>
-      <span class="bdg" style="background:${bc}20;color:${bc}">${p.usuari}</span>
-      <button class="delbtn" data-action="del" data-id="${p.id}">×</button>
+      <button class="chk${p.comprat?" dn":""}" data-action="toggle" data-id="${esc(p.id)}">${p.comprat?"✓":""}</button>
+      <button class="emo" data-action="opencat" data-id="${esc(p.id)}">${cat.e}</button>
+      <span class="inom${p.comprat?" dn":""}">${esc(p.nom)}</span>
+      <span class="bdg" style="background:${bc}20;color:${bc}">${esc(p.usuari)}</span>
+      <button class="delbtn" data-action="del" data-id="${esc(p.id)}">×</button>
     </div>
-    ${ob?`<div class="ipick">${CATS.map(c=>`<button class="cpbtn" data-action="itemcat" data-id="${p.id}" data-cat="${c.id}" style="border-color:${c.c};background:${p.cat===c.id?c.c:"white"};color:${p.cat===c.id?"white":c.c}">${c.e} ${c.nom}</button>`).join("")}</div>`:""}
+    ${ob?`<div class="ipick">${CATS.map(c=>`<button class="cpbtn" data-action="itemcat" data-id="${esc(p.id)}" data-cat="${c.id}" style="border-color:${c.c};background:${p.cat===c.id?c.c:"white"};color:${p.cat===c.id?"white":c.c}">${c.e} ${c.nom}</button>`).join("")}</div>`:""}
   </div>`;
 }
 
@@ -446,7 +448,7 @@ document.addEventListener("input",e=>{
   const old=document.querySelector(".sugs");if(old)old.remove();
   if(S.sugs.length){
     const div=document.createElement("div");div.className="sugs";
-    div.innerHTML=S.sugs.map(s=>`<div class="sug" data-action="sug" data-nom="${s}">${gc(catMem(s)).e} ${cap(s)}</div>`).join("");
+    div.innerHTML=S.sugs.map(s=>`<div class="sug" data-action="sug" data-nom="${esc(s)}">${gc(catMem(s)).e} ${esc(cap(s))}</div>`).join("");
     e.target.closest(".irow")?.after(div);
   }
 });
