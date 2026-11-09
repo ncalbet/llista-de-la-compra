@@ -67,6 +67,13 @@
     .hl{flex:1;height:1px;background:#27ae6030;margin-left:4px;}
     .hi{background:white;border-radius:11px;padding:9px 13px;display:flex;align-items:center;gap:9px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:5px;}
     .errbx{background:#fee;border:1px solid #fcc;border-radius:9px;padding:9px 13px;margin-bottom:10px;font-size:12px;color:#c00;display:flex;justify-content:space-between;}
+    .okbx{background:#eafaf1;border:1px solid #b7e4c7;border-radius:9px;padding:9px 13px;margin-bottom:10px;font-size:12px;color:#1e7d46;display:flex;justify-content:space-between;gap:8px;}
+    .okbx button{background:none;border:none;color:inherit;font-size:14px;}
+    .ppanel{background:white;border-radius:0 0 13px 13px;padding:13px;margin-bottom:16px;box-shadow:0 4px 12px rgba(0,0,0,.06);}
+    .tarea{width:100%;min-height:140px;padding:11px 13px;border-radius:11px;border:2px solid #e0e0e0;font-size:16px;font-family:inherit;resize:vertical;outline:none;margin-bottom:6px;}
+    .tarea:focus{border-color:var(--cl);}
+    .pinfo{font-size:12px;color:#999;margin-bottom:9px;}
+    .pbtn{width:100%;padding:12px;border:none;border-radius:11px;color:white;font-size:15px;font-weight:600;}
   </style>
 </head>
 <body>
@@ -114,7 +121,7 @@ const catMem=nom=>{
 };
 
 // ESTAT
-let S={screen:"boot",email:"",authErr:"",authBusy:false,usuari:null,prod:[],emrg:[],hist:[],freq:{},text:"",catS:null,catManual:false,showCP:false,showF:false,openId:null,loading:true,tab:"normal",sugs:[],err:null};
+let S={screen:"boot",email:"",authErr:"",authBusy:false,usuari:null,prod:[],emrg:[],hist:[],freq:{},text:"",catS:null,catManual:false,showCP:false,showF:false,showP:false,paste:"",ok:null,openId:null,loading:true,tab:"normal",sugs:[],err:null};
 
 // FIREBASE
 const fbApp=initializeApp(FB_CFG);
@@ -164,7 +171,7 @@ function entrar(){
 }
 function sortir(){
   _unsubs.forEach(u=>u());_unsubs=[];
-  S.usuari=null;S.prod=[];S.emrg=[];S.hist=[];S.freq={};S.err=null;
+  S.usuari=null;S.prod=[];S.emrg=[];S.hist=[];S.freq={};S.err=null;S.ok=null;S.paste="";S.showP=false;
   signOut(auth).catch(e=>{S.err="No s'ha pogut tancar la sessió: "+(e.message||e.code);draw();});
 }
 function getLlista(){return S.tab==="emergencia"?S.emrg:S.prod;}
@@ -182,6 +189,47 @@ function afegir(nom,catF){
   S.text="";S.catS=null;S.catManual=false;S.showCP=false;S.sugs=[];
   draw();
   fbSaveLlista(nouProd);
+}
+// ENGANXAR UNA LLISTA: un producte per línia, o separats per comes o punts i coma
+const MAX_ENGANXA=80;
+function llegirLlista(txt){
+  const noms=[],vist=new Set();
+  // la coma entre xifres és decimal ("1,5 kg"): es protegeix perquè no separi
+  txt.replace(/\t/g," ").replace(/(\d),(\d)/g,"$1\u0001$2").split(/[\r\n;,]+/).forEach(linia=>{
+    let s=linia.replace(/\u0001/g,",").replace(/<[^>]*>/g,"").trim(),abans;
+    do{ // treure pics, guions, emojis, caselles [ ] [x] i numeracions "1." "2)"
+      abans=s;
+      s=s.replace(/^[^\p{L}\p{N}[]+/u,"").replace(/^\[[ xX✓✔]?\]/,"").replace(/^\d+[.)](?=\s|\p{L})/u,"").trim();
+    }while(s!==abans);
+    if(!s||s.endsWith(":"))return; // línia buida o títol ("Mercadona:")
+    s=s.replace(/[<>"]/g,"").replace(/[^\p{L}\p{N})]+$/u,"").replace(/\s+/g," ").trim();
+    if(!/\p{L}/u.test(s))return; // només xifres o signes
+    const k=nrm(s);
+    if(vist.has(k))return;
+    vist.add(k);noms.push(cap(s));
+  });
+  return noms;
+}
+function afegirLlista(){
+  const noms=llegirLlista(S.paste);
+  if(!noms.length){S.err="No hi he trobat cap producte. Posa'n un per línia o separa'ls amb comes.";draw();return;}
+  if(noms.length>MAX_ENGANXA){S.err=`Hi ha ${noms.length} línies: com a màxim se n'hi poden enganxar ${MAX_ENGANXA} de cop.`;draw();return;}
+  const l=getLlista();
+  const ja=new Set(l.filter(p=>!p.comprat).map(p=>nrm(p.nom)));
+  const ara=Date.now(),nous=[];
+  let rep=0;
+  noms.forEach(n=>{
+    if(ja.has(nrm(n))){rep++;return;}
+    nous.push({id:uid(),nom:n,comprat:false,usuari:NOMS[S.usuari],cat:catMem(n),ts:ara+nous.length});
+  });
+  const alt=nous.filter(p=>p.cat==="altres").length;
+  S.ok=(nous.length?`✓ ${nous.length===1?"S'ha afegit 1 producte":`S'han afegit ${nous.length} productes`}`:"No s'ha afegit res")
+    +(rep?` · ${rep} ja hi eren`:"")
+    +(alt?` · ${alt} a «Altres»: toca'n la icona per canviar-ne la categoria`:"");
+  S.err=null;S.paste="";S.showP=false;
+  if(!nous.length){draw();return;}
+  const nl=[...l,...nous];
+  setLlista(nl);draw();fbSaveLlista(nl);
 }
 function toggle(id){
   const l=getLlista(),p=l.find(x=>x.id===id);if(!p)return;
@@ -240,6 +288,9 @@ function draw(){
   if(S.screen==="app"&&S.tab!=="historial"){
     const inp=document.getElementById("inp");
     if(inp){inp.value=S.text;inp.style.setProperty("--cl",COL[S.usuari]);}
+    // el text enganxat es conserva encara que arribi un canvi de l'altra persona
+    const ta=document.getElementById("enganxa");
+    if(ta){ta.value=S.paste;ta.style.setProperty("--cl",COL[S.usuari]);}
   }
 }
 
@@ -311,6 +362,17 @@ function hApp(){
     }).join("")}</div>`;
   }
 
+  // Enganxar una llista
+  const pc=S.showP?cl:"#e0e0e0";
+  body+=`<button class="fbtn" data-action="paste" style="border-color:${pc};background:${S.showP?cl+"10":"white"};color:${S.showP?cl:"#999"};border-radius:${S.showP?"13px 13px 0 0":"13px"};margin-bottom:${S.showP?"0":"16px"}">📝 Enganxar una llista ${S.showP?"▲":"▼"}</button>`;
+  if(S.showP){
+    body+=`<div class="ppanel">
+      <textarea id="enganxa" class="tarea" placeholder="Enganxa aquí la llista:&#10;un producte per línia,&#10;o separats per comes"></textarea>
+      <p class="pinfo">Cada producte anirà a la seva categoria. Els que ja hi són no es repeteixen.</p>
+      <button class="pbtn" style="background:${grd}" data-action="pasteadd">Afegir a la llista${isE?" d'emergència":""}</button>
+    </div>`;
+  }
+
   // Llista
   if(S.loading) body+=`<div class="ld">Carregant...</div>`;
   else if(!pend.length) body+=`<div class="empty"><div style="font-size:44px;margin-bottom:10px">${isE?"🍽️":"🎉"}</div><p>${isE?"Llista d'emergència buida!":"La llista és buida!"}<br>Afegeix el primer producte.</p></div>`;
@@ -325,7 +387,8 @@ function hApp(){
     <div class="ilist">${comp.map(p=>hItem(p)).join("")}</div></div>`;
 
   const errBx=S.err?`<div class="errbx"><span>${S.err}</span><button data-action="clrerr">✕</button></div>`:"";
-  return hdr+`<div class="main">${tabs}${errBx}${body}</div>`;
+  const okBx=S.ok?`<div class="okbx"><span>${S.ok}</span><button data-action="clrok">✕</button></div>`:"";
+  return hdr+`<div class="main">${tabs}${errBx}${okBx}${body}</div>`;
 }
 function hItem(p){
   const cat=gc(p.cat),bc=p.usuari==="Néstor"?"#667eea":"#f5576c",ob=S.openId===p.id;
@@ -360,6 +423,9 @@ document.addEventListener("click",e=>{
   else if(a==="catpick"){S.showCP=!S.showCP;draw();}
   else if(a==="setcat"){S.catS=ab.dataset.cat;S.catManual=true;S.showCP=false;draw();}
   else if(a==="freq"){S.showF=!S.showF;draw();}
+  else if(a==="paste"){S.showP=!S.showP;S.ok=null;draw();if(S.showP)document.getElementById("enganxa")?.focus();}
+  else if(a==="pasteadd")afegirLlista();
+  else if(a==="clrok"){S.ok=null;draw();}
   else if(a==="toggle")toggle(ab.dataset.id);
   else if(a==="opencat"){S.openId=S.openId===ab.dataset.id?null:ab.dataset.id;draw();}
   else if(a==="itemcat")canviarCat(ab.dataset.id,ab.dataset.cat);
@@ -370,6 +436,7 @@ document.addEventListener("click",e=>{
 });
 
 document.addEventListener("input",e=>{
+  if(e.target.id==="enganxa"){S.paste=e.target.value;return;}
   if(e.target.id!=="inp")return;
   S.text=e.target.value;
   const q=nrm(S.text);
