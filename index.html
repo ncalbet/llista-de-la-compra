@@ -97,9 +97,10 @@ const CATS=[
   {id:"pa",nom:"Pa i cereals",e:"🍞",c:"#d4a574"},{id:"begudes",nom:"Begudes",e:"🥤",c:"#8e44ad"},
   {id:"conserves",nom:"Conserves",e:"🥫",c:"#7f8c8d"},{id:"neteja",nom:"Neteja",e:"🧹",c:"#1abc9c"},
   {id:"higiene",nom:"Higiene",e:"🧴",c:"#3498db"},{id:"picapica",nom:"Pica-pica",e:"🧆",c:"#e91e8c"},
-  {id:"congelats",nom:"Congelats",e:"🧊",c:"#00bcd4"},{id:"altres",nom:"Altres",e:"🛍️",c:"#95a5a6"},
+  {id:"congelats",nom:"Congelats",e:"🧊",c:"#00bcd4"},{id:"especies",nom:"Espècies i condiments",e:"🧂",c:"#a0522d"},
+  {id:"altres",nom:"Altres",e:"🛍️",c:"#95a5a6"}, // «Altres» ha de ser sempre l'última: és la de recanvi
 ];
-const CM={poma:0,pomes:0,platan:0,platans:0,taronja:0,taronges:0,llimona:0,llimones:0,maduixa:0,maduixes:0,pera:0,peres:0,melo:0,sindria:0,mango:0,kiwi:0,fruita:0,tomaquet:1,tomaquets:1,patata:1,patates:1,ceba:1,cebes:1,all:1,alls:1,pastanaga:1,enciam:1,espinacs:1,pebrot:1,pebrots:1,broquil:1,coliflor:1,porro:1,carbassa:1,cogombre:1,verdura:1,verdures:1,pollastre:2,llom:2,bistec:2,costelles:2,vedella:2,porc:2,xai:2,hamburguesa:2,carn:2,peix:3,salmo:3,tonyina:3,bacalla:3,lluc:3,gambes:3,musclos:3,calamars:3,sardines:3,pernil:4,fuet:4,llonganissa:4,salami:4,xorizo:4,embotit:4,llet:5,iogurt:5,iogurts:5,formatge:5,mantequilla:5,nata:5,quefir:5,ous:5,pa:6,baguette:6,galetes:6,cereals:6,farina:6,arros:6,pasta:6,macarrons:6,espaguetis:6,torrades:6,aigua:7,cervesa:7,vi:7,cava:7,suc:7,refresc:7,cafe:7,te:7,infusio:7,beguda:7,conserva:8,conserves:8,olives:8,cigrons:8,llenties:8,mais:8,pesols:8,detergent:9,suavitzant:9,lleixiu:9,fregall:9,esponja:9,neteja:9,bosses:9,gel:10,xampu:10,condicionador:10,desodorant:10,higiene:10,"patates fregides":11,cacauets:11,pipes:11,xips:11,hummus:11,congelat:12,congelats:12,gelat:12,gelats:12,pizza:12,croquetes:12};
+const CM={poma:0,pomes:0,platan:0,platans:0,taronja:0,taronges:0,llimona:0,llimones:0,maduixa:0,maduixes:0,pera:0,peres:0,melo:0,sindria:0,mango:0,kiwi:0,fruita:0,tomaquet:1,tomaquets:1,patata:1,patates:1,ceba:1,cebes:1,all:1,alls:1,pastanaga:1,enciam:1,espinacs:1,pebrot:1,pebrots:1,broquil:1,coliflor:1,porro:1,carbassa:1,cogombre:1,verdura:1,verdures:1,pollastre:2,llom:2,bistec:2,costelles:2,vedella:2,porc:2,xai:2,hamburguesa:2,carn:2,peix:3,salmo:3,tonyina:3,bacalla:3,lluc:3,gambes:3,musclos:3,calamars:3,sardines:3,pernil:4,fuet:4,llonganissa:4,salami:4,xorizo:4,embotit:4,llet:5,iogurt:5,iogurts:5,formatge:5,mantequilla:5,nata:5,quefir:5,ous:5,pa:6,panet:6,baguette:6,galetes:6,cereals:6,farina:6,arros:6,pasta:6,macarrons:6,espaguetis:6,torrades:6,aigua:7,cervesa:7,vi:7,cava:7,suc:7,refresc:7,cafe:7,te:7,infusio:7,beguda:7,conserva:8,conserves:8,olives:8,cigrons:8,llenties:8,mais:8,pesols:8,detergent:9,suavitzant:9,lleixiu:9,fregall:9,esponja:9,neteja:9,bosses:9,gel:10,xampu:10,condicionador:10,desodorant:10,higiene:10,"patates fregides":11,cacauets:11,pipes:11,xips:11,hummus:11,congelat:12,congelats:12,gelat:12,gelats:12,pizza:12,croquetes:12,sal:13,pebre:13,especies:13,especia:13,herbes:13,orenga:13,comi:13,canyella:13,julivert:13,safra:13,curri:13,curry:13,romani:13,farigola:13,llorer:13,moscada:13,gingebre:13,alfabrega:13,bitxo:13,vainilla:13,oli:13,vinagre:13,sucre:13,salsa:13,salses:13,maionesa:13,quetxup:13,ketchup:13,mostassa:13,allioli:13,soja:13,tabasco:13,pesto:13};
 const GEN=[{n:"Pa",c:"pa"},{n:"Llet",c:"lactis"},{n:"Ous",c:"lactis"},{n:"Iogurt",c:"lactis"},{n:"Formatge",c:"lactis"},{n:"Mantequilla",c:"lactis"},{n:"Pollastre",c:"carn"},{n:"Carn picada",c:"carn"},{n:"Llom",c:"carn"},{n:"Peix",c:"peix"},{n:"Tomàquets",c:"verdura"},{n:"Patates",c:"verdura"},{n:"Ceba",c:"verdura"},{n:"Enciam",c:"verdura"},{n:"Pebrot",c:"verdura"},{n:"Pastanaga",c:"verdura"},{n:"Pomes",c:"fruita"},{n:"Plàtans",c:"fruita"},{n:"Taronges",c:"fruita"},{n:"Maduixes",c:"fruita"},{n:"Arròs",c:"pa"},{n:"Pasta",c:"pa"},{n:"Tomàquet triturat",c:"conserves"},{n:"Detergent",c:"neteja"},{n:"Paper de vàter",c:"neteja"},{n:"Gel de dutxa",c:"higiene"},{n:"Xampú",c:"higiene"},{n:"Cervesa",c:"begudes"},{n:"Aigua",c:"begudes"},{n:"Pernil dolç",c:"embotit"},{n:"Fuet",c:"embotit"},{n:"Patates fregides",c:"picapica"},{n:"Olives",c:"picapica"},{n:"Pizza",c:"congelats"},{n:"Croquetes",c:"congelats"}];
 
 const gc=id=>CATS.find(c=>c.id===id)||CATS[CATS.length-1];
@@ -108,7 +109,13 @@ const uid=()=>Math.random().toString(36).substr(2,9)+Date.now().toString(36);
 // Tot text que ve de la base de dades o de l'usuari passa per esc() abans d'entrar a l'HTML
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
 const nrm=s=>s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-const dcat=s=>{const n=nrm(s);for(const[k,v]of Object.entries(CM))if(n===nrm(k)||n.includes(nrm(k)))return CATS[v].id;return"altres";};
+// Les paraules de 3 lletres o menys («vi», «suc», «sal», «oli», «pa»…) només compten com a paraula
+// sencera: si no, «vinagre» sortia a Begudes per «vi», i «sal» es menjaria «salmó»
+const dcat=s=>{
+  const n=nrm(s),w=n.split(/[^a-z0-9]+/);
+  for(const[k,v]of Object.entries(CM)){const kk=nrm(k);if(kk.length<=3?w.includes(kk):n.includes(kk))return CATS[v].id;}
+  return"altres";
+};
 // Categoria recordada: llista actual > freqüents > historial > genèrics > detecció
 const catMem=nom=>{
   const k=nrm(nom);
